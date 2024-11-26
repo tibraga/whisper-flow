@@ -9,6 +9,7 @@ import numpy as np
 import whisper
 from whisper import Whisper
 
+from faster_whisper import WhisperModel
 
 models = {}
 
@@ -30,13 +31,21 @@ def transcribe_pcm_chunks(
     arr = (
         np.frombuffer(b"".join(chunks), np.int16).flatten().astype(np.float32) / 32768.0
     )
-    return model.transcribe(
-        arr,
-        fp16=False,
-        language=lang,
-        logprob_threshold=log_prob,
-        temperature=temperature,
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+        # Run on GPU with FP16
+    asr_pipeline = WhisperModel(
+        "deepdml/faster-whisper-large-v3-turbo-ct2", device=device, compute_type="float16"
     )
+    return asr_pipeline.transcribe(
+            arr, word_timestamps=True, language="pt", vad_filter=True
+        )
+    # return model.transcribe(
+    #     arr,
+    #     fp16=False,
+    #     language=lang,
+    #     logprob_threshold=log_prob,
+    #     temperature=temperature,
+    # )
 
 
 async def transcribe_pcm_chunks_async(
