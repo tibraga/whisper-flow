@@ -32,15 +32,36 @@ def transcribe_pcm_chunks(
         np.frombuffer(b"".join(chunks), np.int16).flatten().astype(np.float32) / 32768.0
     )
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print("Inicializando whisper...")
+
         # Run on GPU with FP16
     asr_pipeline = WhisperModel(
         "deepdml/faster-whisper-large-v3-turbo-ct2", device=device, compute_type="float16"
     )
-    print("Inicializando whisper...OK")
-    return asr_pipeline.transcribe(
+
+    segments, info = asr_pipeline.transcribe(
             arr, word_timestamps=True, language="pt", vad_filter=True
         )
+    segments = list(segments)  # The transcription will actually run here.
+
+    flattened_words = [
+            word for segment in segments for word in segment.words
+        ]
+
+    to_return = {
+        "language": info.language,
+        "language_probability": info.language_probability,
+        "text": " ".join([s.text.strip() for s in segments]),
+        "words": [
+            {
+                "word": w.word,
+                "start": w.start,
+                "end": w.end,
+                "probability": w.probability,
+            }
+            for w in flattened_words
+        ],
+    }
+    return to_return
     # return model.transcribe(
     #     arr,
     #     fp16=False,
