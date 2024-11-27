@@ -35,7 +35,7 @@ def get_model(file_name="tiny.en.pt") -> Whisper:
         )
     return models[file_name]
 
-async def save_audio_to_file(
+def save_audio_to_file(
     audio_data, file_name, audio_dir="audio_files", audio_format="wav"
 ):
     """
@@ -57,6 +57,8 @@ async def save_audio_to_file(
         wav_file.setsampwidth(2)
         wav_file.setframerate(16000)
         wav_file.writeframes(audio_data)
+
+    print(f"file_path: {file_path}")
 
     return file_path
 
