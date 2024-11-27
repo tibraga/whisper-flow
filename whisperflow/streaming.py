@@ -37,7 +37,6 @@ async def transcribe(
             "data": await transcriber(window),
             "time": (time.time() - start) * 1000,
         }
-        print(f"result: {result}")
         if should_close_segment(result, prev_result, cycles):
             window, prev_result, cycles = [], {}, 0
             result["is_partial"] = False
@@ -46,6 +45,8 @@ async def transcribe(
         else:
             cycles = 0
             prev_result = result
+
+        print(f"result: {result}")
 
         if result["data"]["text"]:
             await segment_closed(result)

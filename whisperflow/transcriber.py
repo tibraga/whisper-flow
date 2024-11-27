@@ -14,6 +14,12 @@ from faster_whisper import WhisperModel
 models = {}
 
 
+# Run on GPU with FP16
+asr_pipeline = WhisperModel(
+    "deepdml/faster-whisper-large-v3-turbo-ct2", device="cuda", compute_type="float16"
+)
+
+
 def get_model(file_name="tiny.en.pt") -> Whisper:
     """load models from disk"""
     if file_name not in models:
@@ -33,10 +39,6 @@ def transcribe_pcm_chunks(
     )
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # Run on GPU with FP16
-    asr_pipeline = WhisperModel(
-        "deepdml/faster-whisper-large-v3-turbo-ct2", device=device, compute_type="float16"
-    )
 
     segments, info = asr_pipeline.transcribe(
             arr, word_timestamps=True, language="pt", vad_filter=True
