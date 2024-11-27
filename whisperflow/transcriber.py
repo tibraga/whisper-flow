@@ -14,6 +14,9 @@ from faster_whisper import WhisperModel
 from silero_vad import load_silero_vad, get_speech_timestamps, collect_chunks
 import torchaudio
 
+import io
+import wave
+
 models = {}
 
 
@@ -37,15 +40,36 @@ def transcribe_pcm_chunks(
     model: Whisper, chunks: list, lang="en", temperature=0.1, log_prob=-0.5
 ) -> dict:
     """transcribes pcm chunks list"""
-    arr = (
-        np.frombuffer(b"".join(chunks), np.int16).flatten().astype(np.float32) / 32768.0
-    )
-    
-    audio, sample_rate = torchaudio.load(arr)
-    vad_model = load_silero_vad()
-    speech_segments = get_speech_timestamps(audio, vad_model, sampling_rate = sample_rate)
-    cleaned_audio = collect_chunks(speech_segments, audio)
+    # arr = (
+    #     np.frombuffer(b"".join(chunks), np.int16).flatten().astype(np.float32) / 32768.0
+    # )
 
+    audio_bytes = b''.join(chunks)
+
+    # Defina os parâmetros do áudio
+    sample_width = 2      # Largura de amostra em bytes (2 bytes para 16 bits)
+    n_channels = 1        # Número de canais (1 para mono, ajuste se for estéreo)
+    sample_rate = 16000   # Taxa de amostragem em Hz (ajuste conforme o seu áudio)
+
+    # Crie um buffer em memória para escrever o arquivo WAV
+    buffer = io.BytesIO()
+
+    # Escreva os dados de áudio no buffer como um arquivo WAV
+    with wave.open(buffer, 'wb') as wf:
+        wf.setnchannels(n_channels)
+        wf.setsampwidth(sample_width)
+        wf.setframerate(sample_rate)
+        wf.writeframes(audio_bytes)
+
+    # Mova o ponteiro do buffer para o início
+    buffer.seek(0)
+
+    # Carregue o áudio usando torchaudio.load a partir do buffer
+    waveform, sr = torchaudio.load(buffer)
+    
+    vad_model = load_silero_vad()
+    speech_segments = get_speech_timestamps(waveform, vad_model, sampling_rate = sample_rate)
+    cleaned_audio = collect_chunks(speech_segments, waveform)
 
     # Agora você pode usar 'trimmed_arr' para a transcrição
 
