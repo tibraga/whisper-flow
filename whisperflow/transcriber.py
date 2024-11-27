@@ -66,31 +66,36 @@ def transcribe_pcm_chunks(
     model: Whisper, chunks: list, lang="en", temperature=0.1, log_prob=-0.5
 ) -> dict:
     """transcribes pcm chunks list"""
-    # arr = (
-    #     np.frombuffer(b"".join(chunks), np.int16).flatten().astype(np.float32) / 32768.0
-    # )
+    arr = (
+        np.frombuffer(b"".join(chunks), np.int16).flatten().astype(np.float32) / 32768.0
+    )
 
-    audio_bytes = b''.join(chunks)
-    path_wav = save_audio_to_file(audio_bytes, "teste.wav")
-    wav = read_audio(path_wav)
-    vad_model = load_silero_vad()
-    speech_segments = get_speech_timestamps(wav, vad_model)
-    cleaned_audio = torch.tensor([], dtype=torch.float32)
-    if len(speech_segments) > 0:
-        cleaned_audio = collect_chunks(speech_segments, wav)
+    # audio_bytes = b''.join(chunks)
+    # path_wav = save_audio_to_file(audio_bytes, "teste.wav")
+    # wav = read_audio(path_wav)
+    # vad_model = load_silero_vad()
+    # speech_segments = get_speech_timestamps(wav, vad_model)
+    # cleaned_audio = torch.tensor([], dtype=torch.float32)
+    # if len(speech_segments) > 0:
+    #     cleaned_audio = collect_chunks(speech_segments, wav)
 
-    cleaned_audio_array = cleaned_audio.numpy()
+    # cleaned_audio_array = cleaned_audio.numpy()
 
     # Agora você pode usar 'trimmed_arr' para a transcrição
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-
+    vad_parameters = {
+        "threshold": 0.5,
+        "min_speech_duration_ms": 250,
+        "min_silence_duration_ms": 100,
+        "window_size_samples": 512,
+        "speech_pad_ms": 30
+    }
 
     segments, info = asr_pipeline.transcribe(
-            cleaned_audio_array, word_timestamps=True, language="pt", vad_filter=True
+            arr, word_timestamps=True, language="pt", vad_filter=True, vad_parameters=vad_parameters
         )
     segments = list(segments)  # The transcription will actually run here.
-
+    print(segments)
     flattened_words = [
             word for segment in segments for word in segment.words
         ]
