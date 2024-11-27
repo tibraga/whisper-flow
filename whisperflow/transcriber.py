@@ -11,7 +11,7 @@ from whisper import Whisper
 
 from faster_whisper import WhisperModel
 
-from silero_vad import SileroVAD
+from silero_vad import load_silero_vad, get_speech_timestamps, collect_chunks
 import torchaudio
 
 models = {}
@@ -42,9 +42,9 @@ def transcribe_pcm_chunks(
     )
     
     audio, sample_rate = torchaudio.load(arr)
-    vad_model = SileroVAD.get_model()
-    speech_segments = vad_model.get_speech_timestamps(audio, sample_rate)
-    cleaned_audio = vad_model.collect_chunks(speech_segments, audio)
+    vad_model = load_silero_vad()
+    speech_segments = get_speech_timestamps(audio, vad_model, sampling_rate = sample_rate)
+    cleaned_audio = collect_chunks(speech_segments, audio)
 
 
     # Agora você pode usar 'trimmed_arr' para a transcrição
