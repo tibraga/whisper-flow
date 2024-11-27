@@ -35,6 +35,30 @@ def get_model(file_name="tiny.en.pt") -> Whisper:
         )
     return models[file_name]
 
+async def save_audio_to_file(
+    audio_data, file_name, audio_dir="audio_files", audio_format="wav"
+):
+    """
+    Saves the audio data to a file.
+
+    :param audio_data: The audio data to save.
+    :param file_name: The name of the file.
+    :param audio_dir: Directory where audio files will be saved.
+    :param audio_format: Format of the audio file.
+    :return: Path to the saved audio file.
+    """
+
+    os.makedirs(audio_dir, exist_ok=True)
+
+    file_path = os.path.join(audio_dir, file_name)
+
+    with wave.open(file_path, "wb") as wav_file:
+        wav_file.setnchannels(1)  # Assuming mono audio
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(16000)
+        wav_file.writeframes(audio_data)
+
+    return file_path
 
 def transcribe_pcm_chunks(
     model: Whisper, chunks: list, lang="en", temperature=0.1, log_prob=-0.5
@@ -45,31 +69,11 @@ def transcribe_pcm_chunks(
     # )
 
     audio_bytes = b''.join(chunks)
+    audio_wav = save_audio_to_file(audio_bytes, "teste.wav")
 
-    # Defina os parâmetros do áudio
-    sample_width = 2      # Largura de amostra em bytes (2 bytes para 16 bits)
-    n_channels = 1        # Número de canais (1 para mono, ajuste se for estéreo)
-    sample_rate = 16000   # Taxa de amostragem em Hz (ajuste conforme o seu áudio)
-
-    # Crie um buffer em memória para escrever o arquivo WAV
-    buffer = io.BytesIO()
-
-    # Escreva os dados de áudio no buffer como um arquivo WAV
-    with wave.open(buffer, 'wb') as wf:
-        wf.setnchannels(n_channels)
-        wf.setsampwidth(sample_width)
-        wf.setframerate(sample_rate)
-        wf.writeframes(audio_bytes)
-
-    # Mova o ponteiro do buffer para o início
-    buffer.seek(0)
-
-    # Carregue o áudio usando torchaudio.load a partir do buffer
-    waveform, sr = torchaudio.load(buffer)
-    
     vad_model = load_silero_vad()
-    speech_segments = get_speech_timestamps(waveform, vad_model, sampling_rate = sample_rate)
-    cleaned_audio = collect_chunks(speech_segments, waveform)
+    speech_segments = get_speech_timestamps(audio_wav, vad_model)
+    cleaned_audio = collect_chunks(speech_segments, audio_wav)
 
     # Agora você pode usar 'trimmed_arr' para a transcrição
 
