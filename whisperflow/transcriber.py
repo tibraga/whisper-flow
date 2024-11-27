@@ -84,7 +84,7 @@ def transcribe_pcm_chunks(
     # Agora você pode usar 'trimmed_arr' para a transcrição
 
     vad_parameters = {
-        "threshold": 0.5,
+        "threshold": 0.1,
         "min_speech_duration_ms": 250,
         "min_silence_duration_ms": 100,
         "window_size_samples": 512,
