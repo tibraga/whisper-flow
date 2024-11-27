@@ -46,7 +46,7 @@ def transcribe_pcm_chunks(
     # Remover silêncio
     trimmed_arr, index = librosa.effects.trim(
         arr,
-        top_db=10,
+        top_db=5,
         frame_length=frame_length,
         hop_length=hop_length
     )
