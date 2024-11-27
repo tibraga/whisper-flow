@@ -79,13 +79,15 @@ def transcribe_pcm_chunks(
     if len(speech_segments) > 0:
         cleaned_audio = collect_chunks(speech_segments, wav)
 
+    cleaned_audio_array = cleaned_audio.numpy()
+
     # Agora você pode usar 'trimmed_arr' para a transcrição
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
     segments, info = asr_pipeline.transcribe(
-            cleaned_audio, word_timestamps=True, language="pt", vad_filter=True
+            cleaned_audio_array, word_timestamps=True, language="pt", vad_filter=True
         )
     segments = list(segments)  # The transcription will actually run here.
 
