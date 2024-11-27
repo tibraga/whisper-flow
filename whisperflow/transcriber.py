@@ -75,7 +75,9 @@ def transcribe_pcm_chunks(
     wav = read_audio(path_wav)
     vad_model = load_silero_vad()
     speech_segments = get_speech_timestamps(wav, vad_model)
-    cleaned_audio = collect_chunks(speech_segments, wav)
+    cleaned_audio = []
+    if len(speech_segments) > 0:
+        cleaned_audio = collect_chunks(speech_segments, wav)
 
     # Agora você pode usar 'trimmed_arr' para a transcrição
 
