@@ -37,11 +37,33 @@ def transcribe_pcm_chunks(
     arr = (
         np.frombuffer(b"".join(chunks), np.int16).flatten().astype(np.float32) / 32768.0
     )
+
+    # Defina um limiar para o silêncio (ajuste conforme necessário)
+    threshold = 0.01
+
+    # Obtenha o valor absoluto do array de áudio
+    abs_arr = np.abs(arr)
+
+    # Encontre os índices onde o áudio não é silencioso
+    non_silent_indices = np.where(abs_arr > threshold)[0]
+
+    if len(non_silent_indices) > 0:
+        # Determine os índices de início e fim
+        start_index = non_silent_indices[0]
+        end_index = non_silent_indices[-1] + 1  # +1 para incluir o último sample
+        # Recorte o array para remover o silêncio
+        trimmed_arr = arr[start_index:end_index]
+    else:
+        # O array é totalmente silencioso
+        trimmed_arr = np.array([])
+
+    # Agora você pode usar 'trimmed_arr' para a transcrição
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
     segments, info = asr_pipeline.transcribe(
-            arr, word_timestamps=True, language="pt", vad_filter=True
+            trimmed_arr, word_timestamps=True, language="pt", vad_filter=True
         )
     segments = list(segments)  # The transcription will actually run here.
 
