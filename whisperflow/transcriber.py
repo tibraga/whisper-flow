@@ -5,6 +5,7 @@ import asyncio
 
 import torch
 import numpy as np
+import librosa
 
 import whisper
 from whisper import Whisper
@@ -38,23 +39,26 @@ def transcribe_pcm_chunks(
         np.frombuffer(b"".join(chunks), np.int16).flatten().astype(np.float32) / 32768.0
     )
 
-    # Defina um limiar para o silêncio (ajuste conforme necessário)
-    threshold = 0.01
+    # Parâmetros ajustados para 16 kHz
+    frame_length = 1024
+    hop_length = 256
 
-    # Obtenha o valor absoluto do array de áudio
-    abs_arr = np.abs(arr)
+    # Remover silêncio
+    trimmed_arr, index = librosa.effects.trim(
+        arr,
+        top_db=20,
+        frame_length=frame_length,
+        hop_length=hop_length
+    )
 
-    # Encontre os índices onde o áudio não é silencioso
-    non_silent_indices = np.where(abs_arr > threshold)[0]
-
-    if len(non_silent_indices) > 0:
-        # Determine os índices de início e fim
-        start_index = non_silent_indices[0]
-        end_index = non_silent_indices[-1] + 1  # +1 para incluir o último sample
-        # Recorte o array para remover o silêncio
-        trimmed_arr = arr[start_index:end_index]
+    # Verificar se o áudio não está vazio após a remoção de silêncio
+    if trimmed_arr.size > 0:
+        # Transcrever usando o modelo Whisper
+        # Por exemplo, se o modelo espera um arquivo de áudio ou um array numpy específico
+        # transcricao = whisper.transcribe(trimmed_arr, sample_rate=16000)
+        print("O áudio após a remoção de silêncio NÃO está vazio.")
     else:
-        # O array é totalmente silencioso
+        print("O áudio após a remoção de silêncio está vazio.")
         trimmed_arr = np.array([])
 
     # Agora você pode usar 'trimmed_arr' para a transcrição
