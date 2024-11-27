@@ -5,12 +5,14 @@ import asyncio
 
 import torch
 import numpy as np
-import librosa
 
 import whisper
 from whisper import Whisper
 
 from faster_whisper import WhisperModel
+
+from silero_vad import SileroVAD
+import torchaudio
 
 models = {}
 
@@ -38,28 +40,12 @@ def transcribe_pcm_chunks(
     arr = (
         np.frombuffer(b"".join(chunks), np.int16).flatten().astype(np.float32) / 32768.0
     )
+    
+    audio, sample_rate = torchaudio.load(arr)
+    vad_model = SileroVAD.get_model()
+    speech_segments = vad_model.get_speech_timestamps(audio, sample_rate)
+    cleaned_audio = vad_model.collect_chunks(speech_segments, audio)
 
-    # Parâmetros ajustados para 16 kHz
-    frame_length = 1024
-    hop_length = 256
-
-    # Remover silêncio
-    trimmed_arr, index = librosa.effects.trim(
-        arr,
-        top_db=5,
-        frame_length=frame_length,
-        hop_length=hop_length
-    )
-
-    # Verificar se o áudio não está vazio após a remoção de silêncio
-    if trimmed_arr.size > 0:
-        # Transcrever usando o modelo Whisper
-        # Por exemplo, se o modelo espera um arquivo de áudio ou um array numpy específico
-        # transcricao = whisper.transcribe(trimmed_arr, sample_rate=16000)
-        print("O áudio após a remoção de silêncio NÃO está vazio.")
-    else:
-        print("O áudio após a remoção de silêncio está vazio.")
-        trimmed_arr = np.array([])
 
     # Agora você pode usar 'trimmed_arr' para a transcrição
 
@@ -67,7 +53,7 @@ def transcribe_pcm_chunks(
 
 
     segments, info = asr_pipeline.transcribe(
-            trimmed_arr, word_timestamps=True, language="pt", vad_filter=True
+            cleaned_audio, word_timestamps=True, language="pt", vad_filter=True
         )
     segments = list(segments)  # The transcription will actually run here.
 
