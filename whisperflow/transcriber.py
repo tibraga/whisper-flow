@@ -92,7 +92,7 @@ def transcribe_pcm_chunks(
     }
 
     segments, info = asr_pipeline.transcribe(
-            arr, word_timestamps=True, without_timestamps=True, language="pt", vad_filter=True, vad_parameters=vad_parameters
+            arr, word_timestamps=True, without_timestamps=True, language="pt", vad_filter=True#, vad_parameters=vad_parameters
         )
     segments = list(segments)  # The transcription will actually run here.
     print(segments)
