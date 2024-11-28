@@ -16,6 +16,11 @@ import torchaudio
 
 import io
 import wave
+from pydub import AudioSegment
+
+from df.enhance import enhance, init_df, load_audio, save_audio
+
+model, df_state, _ = init_df()
 
 models = {}
 
@@ -70,6 +75,7 @@ def transcribe_pcm_chunks(
         np.frombuffer(b"".join(chunks), np.int16).flatten().astype(np.float32) / 32768.0
     )
 
+    #SILERO-VAD
     # audio_bytes = b''.join(chunks)
     # path_wav = save_audio_to_file(audio_bytes, "teste.wav")
     # wav = read_audio(path_wav)
@@ -81,7 +87,28 @@ def transcribe_pcm_chunks(
 
     # cleaned_audio_array = cleaned_audio.numpy()
 
-    # Agora você pode usar 'trimmed_arr' para a transcrição
+    # DEEP FILTER NET
+    audio_bytes = b''.join(chunks)
+    path_wav = save_audio_to_file(audio_bytes, "teste.wav")
+    
+    # Carregar o arquivo de áudio original
+    audio = AudioSegment.from_file(path_wav)
+    # Alterar a taxa de amostragem para 48kHz
+    audio_48kHz = audio.set_frame_rate(48000)
+    # Exportar o áudio convertido
+    audio_48kHz.export("output_audio_48kHz.wav", format="wav")
+
+    audio, _ = load_audio("output_audio_48kHz.wav", sr=df_state.sr())
+    # Denoise the audio
+    enhanced = enhance(model, df_state, audio)
+    # Save for listening
+    save_audio("enhanced.wav", enhanced, df_state.sr())
+
+    audio = AudioSegment.from_file("enhanced.wav")
+    # Alterar a taxa de amostragem para 48kHz
+    audio_16kHz = audio.set_frame_rate(16000)
+    # Exportar o áudio convertido
+    audio_16kHz.export("output_audio_16kHz.wav", format="wav")
 
     vad_parameters = {
         "threshold": 0.1,
@@ -92,7 +119,7 @@ def transcribe_pcm_chunks(
     }
 
     segments, info = asr_pipeline.transcribe(
-            arr, word_timestamps=True, language="pt", vad_filter=True, vad_parameters=vad_parameters
+            "output_audio_16kHz.wav", word_timestamps=True, language="pt", vad_filter=True#, vad_parameters=vad_parameters
         )
     segments = list(segments)  # The transcription will actually run here.
     print(segments)
