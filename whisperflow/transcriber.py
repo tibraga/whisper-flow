@@ -20,7 +20,7 @@ from pydub import AudioSegment
 
 from df.enhance import enhance, init_df, load_audio, save_audio
 
-model, df_state, _ = init_df()
+model_df, df_state, _ = init_df()
 
 models = {}
 
@@ -100,7 +100,7 @@ def transcribe_pcm_chunks(
 
     audio, _ = load_audio("output_audio_48kHz.wav", sr=df_state.sr())
     # Denoise the audio
-    enhanced = enhance(model, df_state, audio)
+    enhanced = enhance(model_df, df_state, audio)
     # Save for listening
     save_audio("enhanced.wav", enhanced, df_state.sr())
 
