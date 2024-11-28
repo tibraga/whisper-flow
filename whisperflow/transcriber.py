@@ -16,6 +16,7 @@ import torchaudio
 
 import io
 import wave
+import uuid
 
 models = {}
 
@@ -58,8 +59,6 @@ def save_audio_to_file(
         wav_file.setframerate(16000)
         wav_file.writeframes(audio_data)
 
-    print(f"file_path: {file_path}")
-
     return file_path
 
 def transcribe_pcm_chunks(
@@ -71,25 +70,22 @@ def transcribe_pcm_chunks(
     # )
 
     audio_bytes = b''.join(chunks)
-    path_wav = save_audio_to_file(audio_bytes, "teste.wav")
+    file_name = f"{str(uuid.uuid4())}.wav"
+    path_wav = save_audio_to_file(audio_bytes, file_name)
     wav = read_audio(path_wav)
     vad_model = load_silero_vad()
     speech_segments = get_speech_timestamps(wav, vad_model)
     cleaned_audio = torch.tensor([], dtype=torch.float32)
     if len(speech_segments) > 0:
         cleaned_audio = collect_chunks(speech_segments, wav)
-
     cleaned_audio_array = cleaned_audio.numpy()
-
-    # Agora você pode usar 'trimmed_arr' para a transcrição
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-
 
     segments, info = asr_pipeline.transcribe(
             cleaned_audio_array, word_timestamps=True, language="pt", vad_filter=True
         )
     segments = list(segments)  # The transcription will actually run here.
+    
+    os.remove(path_wav)
 
     flattened_words = [
             word for segment in segments for word in segment.words
