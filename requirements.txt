@@ -21,3 +21,4 @@ torchaudio
 silero-vad
 wave
 deepfilternet
+pydub
