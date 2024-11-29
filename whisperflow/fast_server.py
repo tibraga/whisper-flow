@@ -29,7 +29,7 @@ def transcribe_pcm_chunk(
     return ts.transcribe_pcm_chunks(model, [content])
 
 
-@app.websocket("/ws")
+@app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
     """webscoket implementation"""
     model = ts.get_model()
