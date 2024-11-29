@@ -54,8 +54,8 @@ async def transcribe(
 
 def should_close_segment_improved(result: dict, prev_result: dict, time_processing: float, cycles, max_cycles=1):
     """return if segment should be closed improved"""
-    words1 = result.split()
-    words2 = prev_result.split()
+    words1 = result["data"]["text"].split()
+    words2 = prev_result.get("data", {}).get("text", "").split()
 
     # Verifica se está levando muito tempo para processar, então interrompo logo.
     if time_processing > 2000:
