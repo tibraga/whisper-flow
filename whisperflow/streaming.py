@@ -59,9 +59,8 @@ def should_close_segment_improved(result: dict, prev_result: dict, time_processi
     words2 = prev_result.get("data", {}).get("text", "").split()
 
     # Verifica se está levando muito tempo para processar, então interrompo logo.
-    print(f"time_processing {time_processing}")
-    if time_processing > 2000.0:
-        return False
+    if time_processing > 2000:
+        return True
     # Verifica se as frases têm o mesmo número de palavras
     if len(words1) != len(words2):
         return False
