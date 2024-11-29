@@ -39,7 +39,8 @@ async def transcribe(
             "time": (time.time() - start) * 1000,
         }
         if should_close_segment_improved(result, prev_result, result.get("time"), cycles):
-            window, prev_result, cycles = [], {}, 0
+            window.clear()
+            prev_result, cycles = , {}, 0
             result["is_partial"] = False
         elif result["data"]["text"] == prev_result.get("data", {}).get("text", ""):
             cycles += 1
@@ -99,7 +100,3 @@ class TrancribeSession:  # pylint: disable=too-few-public-methods
         """stop session"""
         self.should_stop[0] = True
         await self.task
-
-
-"Não, são bem simples. O eletrocardiograma e o ecocardiograma serão feitos no laboratório de cardiologia. E o exame de sangue pode ser feito em qualquer laboratório. Vou encaminhar os guias para você."
-"Não, são bem simples. O eletrocardiograma e o ecocardiograma serão feitos no laboratório de cardiologia. E o exame de sangue pode ser feito em qualquer laboratório. Vou encaminhar os guias para você."
