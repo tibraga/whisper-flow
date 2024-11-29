@@ -38,19 +38,13 @@ async def transcribe(
             "data": await transcriber(window),
             "time": (time.time() - start) * 1000,
         }
-        # if should_close_segment(result, prev_result, cycles):
-        #     window, prev_result, cycles = [], {}, 0
-        #     result["is_partial"] = False
-        # elif result["data"]["text"] == prev_result.get("data", {}).get("text", ""):
-        #     cycles += 1
-        # else:
-        #     cycles = 0
-        #     prev_result = result
-
-        if should_close_segment_improved(result["data"]["text"], prev_result.get("data", {}).get("text", ""), result.get("time")):
-            window, prev_result = [], {}
+        if should_close_segment_improved(result, prev_result, result.get("time"), cycles):
+            window, prev_result, cycles = [], {}, 0
             result["is_partial"] = False
+        elif result["data"]["text"] == prev_result.get("data", {}).get("text", ""):
+            cycles += 1
         else:
+            cycles = 0
             prev_result = result
 
         print(f"result: {result}")
@@ -58,7 +52,7 @@ async def transcribe(
         if result["data"]["text"]:
             await segment_closed(result)
 
-def should_close_segment_improved(result: dict, prev_result: dict, time_processing: float):
+def should_close_segment_improved(result: dict, prev_result: dict, time_processing: float, cycles, max_cycles=1):
     """return if segment should be closed improved"""
     words1 = result.split()
     words2 = prev_result.split()
@@ -76,7 +70,7 @@ def should_close_segment_improved(result: dict, prev_result: dict, time_processi
             if distancia > 2:
                 semelhantes = False
                 break
-        return semelhantes
+        return cycles >= max_cycles and semelhantes
 
 def should_close_segment(result: dict, prev_result: dict, cycles, max_cycles=1):
     """return if segment should be closed"""
