@@ -7,6 +7,8 @@ from queue import Queue
 from typing import Callable
 import Levenshtein
 
+from whisperflow.corrections.mixed_correction_strategy import MixedCorrectionStrategy
+from whisperflow.corrections.medical_spell_checker import MedicalSpellChecker
 
 def get_all(queue: Queue) -> list:
     """get_all from queue"""
@@ -21,6 +23,8 @@ async def transcribe(
     queue: Queue,
     transcriber: Callable[[list], str],
     segment_closed: Callable[[dict], None],
+    transcription_language: str,
+    translation_language: str,
 ):
     """the transcription loop"""
     window, prev_result, cycles = [], {}, 0
@@ -39,6 +43,13 @@ async def transcribe(
             "time": (time.time() - start) * 1000,
         }
         if should_close_segment_improved(result, prev_result, result.get("time"), cycles):
+            if not translation_language:
+                mixed_strategy = MixedCorrectionStrategy(language=transcription_language)
+                # Inicializa o controlador com a estratégia mista
+                spell_checker = MedicalSpellChecker(strategy=mixed_strategy)
+                text_corrected = spell_checker.correct_text(result["data"]["text"])
+                result["data"]["text"] = text_corrected
+
             window.clear()
             prev_result, cycles = {}, 0
             result["is_partial"] = False
@@ -83,13 +94,15 @@ def should_close_segment(result: dict, prev_result: dict, cycles, max_cycles=1):
 class TrancribeSession:  # pylint: disable=too-few-public-methods
     """transcription state"""
 
-    def __init__(self, transcribe_async, send_back_async) -> None:
+    def __init__(self, transcribe_async, send_back_async, transcription_language, translation_language) -> None:
         """ctor"""
         self.id = uuid.uuid4()  # pylint: disable=invalid-name
         self.queue = Queue()
         self.should_stop = [False]
+        self.transcription_language = transcription_language
+        self.translation_language = translation_language
         self.task = asyncio.create_task(
-            transcribe(self.should_stop, self.queue, transcribe_async, send_back_async)
+            transcribe(self.should_stop, self.queue, transcribe_async, send_back_async, self.transcription_language, self.translation_language)
         )
 
     def add_chunk(self, chunk: bytes):

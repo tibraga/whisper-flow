@@ -2,7 +2,7 @@
 
 import logging
 from typing import List
-from fastapi import FastAPI, WebSocket, Form, File, UploadFile
+from fastapi import FastAPI, WebSocket, Form, File, UploadFile, Query
 
 from whisperflow import __version__
 import whisperflow.streaming as st
@@ -30,19 +30,21 @@ def transcribe_pcm_chunk(
 
 
 @app.websocket("/")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket,
+                            transcription_language: str = Query("portuguese"),
+                            translation_language: str = Query(None)):
     """webscoket implementation"""
     model = ts.get_model()
 
     async def transcribe_async(chunks: list):
-        return await ts.transcribe_pcm_chunks_async(model, chunks)
+        return await ts.transcribe_pcm_chunks_async(model, chunks, transcription_language, translation_language)
 
     async def send_back_async(data: dict):
         await websocket.send_json(data)
 
     try:
         await websocket.accept()
-        session = st.TrancribeSession(transcribe_async, send_back_async)
+        session = st.TrancribeSession(transcribe_async, send_back_async, transcription_language, translation_language)
         sessions[session.id] = session
 
         while True:

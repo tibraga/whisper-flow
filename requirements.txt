@@ -21,3 +21,6 @@ torchaudio
 silero-vad
 wave
 python-Levenshtein
+soundfile==0.12.1
+hunspell==0.5.5
+RapidFuzz==3.10.1
